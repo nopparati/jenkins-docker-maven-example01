@@ -1,5 +1,5 @@
 
-def applicationName = "jenkins-docker-maven-example"
+def applicationName = "jenkins-docker-maven-example01"
 def beanstalkRegion = "us-east-1"
 def beanstalkInstanceProfile = ""
 def beanstalkServiceRole = ""
@@ -7,7 +7,7 @@ def beanstalkServiceRole = ""
 node {
     
   stage 'Checkout'
-  //git 'https://github.com/kulinski/jenkins-docker-maven-example.git'
+  //git 'https://nopparati/jenkins-docker-maven-example01.git'
   // shortcut to checkout from where this Jenkinsfile is hosted
   checkout scm
 
@@ -26,64 +26,65 @@ node {
   stage 'Package Docker image'
   // Build final releasable image using our Dockerfile and the docker.build cmd
   // This container only contains the packaged jar, not the source or interim build steps
-  def img = docker.build('jenkins-docker-maven-example:latest', '.')
+  def img = docker.build('jenkins-docker-maven-example01:latest', '.')
     
   stage name: 'Push Image', concurrency: 1
   // All the tests passed. We can now retag and push the 'latest' image
-  docker.withRegistry('https://nexus.doyouevenco.de', 'nexus-admin') {
+  //docker.withRegistry('https://nexus.doyouevenco.de', 'nexus-admin') {
+  docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
      img.push('latest')
   }
     
-  stage 'Pull Image'
+  //stage 'Pull Image'
   // Now let's pull it, just to test that a pull from Nexus works correctly
-  docker.withRegistry('https://nexus.doyouevenco.de', 'nexus-admin') {
-     docker.image("jenkins-docker-maven-example:latest").pull()
-  }
+ // docker.withRegistry('https://nexus.doyouevenco.de', 'nexus-admin') {
+ //    docker.image("jenkins-docker-maven-example:latest").pull()
+ // }
   
-  stage 'Pull EB deploy container'
+ // stage 'Pull EB deploy container'
    // Check to ensure that we can access the EB deploy commands container
-   def ebcliDocker = docker.image("coxauto/aws-ebcli")
-   ebcliDocker.pull()
+ //  def ebcliDocker = docker.image("coxauto/aws-ebcli")
+  // ebcliDocker.pull()
    
    //Now we deploy
-  stage 'Deploy Production to Beanstalk'
+ // stage 'Deploy Production to Beanstalk'
   
-    createBeanstalkEnvironmentsIfUnavailable(applicationName, applicationName, applicationName,
-       beanstalkRegion, beanstalkInstanceProfile, beanstalkServiceRole)
+ //   createBeanstalkEnvironmentsIfUnavailable(applicationName, applicationName, applicationName,
+ //      beanstalkRegion, beanstalkInstanceProfile, beanstalkServiceRole)
     
-    deployToEnvironment(applicationName)
+ //   deployToEnvironment(applicationName)
     
-}
+//}
 
 
-def createBeanstalkEnvironmentsIfUnavailable(appName, env, cnamePrefix, region, ip, role) {
-    echo 'Verifying availability of beanstalk app: ' + appName + ' and env: ' + env + ' in region ' + region
+//def createBeanstalkEnvironmentsIfUnavailable(appName, env, cnamePrefix, region, ip, role) {
+   // echo 'Verifying availability of beanstalk app: ' + appName + ' and env: ' + env + ' in region ' + region
 
-    def ebcliDocker = docker.image("coxauto/aws-ebcli")
+    //def ebcliDocker = docker.image("coxauto/aws-ebcli")
 
-    ebcliDocker.inside() {
-        sh 'aws elasticbeanstalk describe-environments --region ' + region + ' --application-name ' + appName + ' --query \'Environments[?EnvironmentName==`' + env + '`]\' > env.available'
-    }
+   // ebcliDocker.inside() {
+        //sh 'aws elasticbeanstalk describe-environments --region ' + region + ' --application-name ' + appName + ' --query \'Environments[?EnvironmentName==`' + env + '`]\' > env.available'
+    //}
 
-    def ebEnvStatus = readFile('env.available');
+    //def ebEnvStatus = readFile('env.available');
 
-    if (ebEnvStatus.contains(env) && ! ebEnvStatus.contains('Terminated')) {
-        echo 'Environment ' + env + ' is available for deployment'
-    } else {
-        echo 'Environment' + env + ' is not available.  Creating beanstalk environment...'
-        ebcliDocker.inside() {
-            sh 'eb create ' + env + ' -c ' + cnamePrefix + ' --sample ' //--instance_profile ' + ip + ' --service-role ' + role
-        }
-    }
-}
+    //if (ebEnvStatus.contains(env) && ! ebEnvStatus.contains('Terminated')) {
+        //echo 'Environment ' + env + ' is available for deployment'
+    //} else {
+        //echo 'Environment' + env + ' is not available.  Creating beanstalk environment...'
+        //ebcliDocker.inside() {
+            //sh 'eb create ' + env + ' -c ' + cnamePrefix + ' --sample ' //--instance_profile ' + ip + ' --service-role ' + role
+        //}
+    //}
+//}
 
-def deployToEnvironment(env) {
-    echo 'Deploying to ' + env
+//def deployToEnvironment(env) {
+    //echo 'Deploying to ' + env
 
-    def ebcliDocker = docker.image("coxauto/aws-ebcli")
-    ebcliDocker.inside() {
-        sh 'eb deploy ' + env
-    }
+    //def ebcliDocker = docker.image("coxauto/aws-ebcli")
+   // ebcliDocker.inside() {
+     //   sh 'eb deploy ' + env
+   // }
 
-    echo 'Completed deployment'
-}
+   // echo 'Completed deployment'
+//}
